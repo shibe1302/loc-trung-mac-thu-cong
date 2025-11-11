@@ -276,10 +276,18 @@ catch {
     Write-Host "Error when printing summary: $_" -ForegroundColor Red
 }
 
+#================ Kiểm tra nếu folder rỗng thì xóa ===============
 foreach ($tram in $cac_tram_test) {
-    $count_files_in_pass = (Get-ChildItem -Path (Join-Path $passFolder $tram)).Count
-    if ($count_files_in_pass -eq 0) {
-        Remove-Item -Path (Join-Path $passFolder $tram) -Recurse -Force
+    $folderPath_P = Join-Path $passFolder $tram
+    $folderPath_F = Join-Path $failFolder $tram
+    $items_P = Get-ChildItem -Path $folderPath_P -ErrorAction SilentlyContinue
+    $items_F = Get-ChildItem -Path $folderPath_F -ErrorAction SilentlyContinue
+
+    if (-not $items_P) {
+        Remove-Item -Path $folderPath_P -Recurse -Force
+    }
+    if (-not $items_F) {
+        Remove-Item -Path $folderPath_F -Recurse -Force
     }
 }
 
