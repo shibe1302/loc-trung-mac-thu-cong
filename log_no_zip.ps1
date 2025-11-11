@@ -1,0 +1,287 @@
+#Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+param (
+    [string]$LOG_DIR,
+    [string]$FCD,
+    [string]$FTU
+)
+
+# thay link fike zip hoac folder sau khi giai nen tai day
+
+$FCD = ""
+$FTU = ""
+
+Set-StrictMode -Version Latest
+
+#================= Ham print ===================
+function pr {
+    param (
+        [string]$p
+    )
+    Write-Host "=========== $p ============" -ForegroundColor Cyan
+}
+
+pr -p $LOG_DIR
+
+$list_dir_LOG_FOLDER = Get-ChildItem -Path $LOG_DIR -Directory
+$list_dir_LOG_FOLDER
+$final_LOG_FOLDER = "cac"
+foreach ($folder in $list_dir_LOG_FOLDER) {
+    if ($folder.Name -imatch "log") {
+        try {
+            $final_LOG_FOLDER = Join-Path $LOG_DIR $folder.Name
+            break
+        }
+        catch {
+            Write-Host "Error when setting final_LOG_FOLDER: $_" -ForegroundColor Red
+            exit
+        }
+        
+    }
+
+}
+Add-Type -AssemblyName System.Windows.Forms
+if ($final_LOG_FOLDER -eq "cac") {
+    Write-Host "Khong tim thay log folder!" -ForegroundColor Red
+    [System.Windows.Forms.MessageBox]::Show("Khong tim thay log folder!
+Hay dat ten folder chua file log thanh 'log' hoac 'LOG'!")
+    exit
+    
+}
+
+
+
+#================= Tao cac folder cua cac tram test ===================
+$passFolder = Join-Path $LOG_DIR "PASS"
+$failFolder = Join-Path $LOG_DIR "FAIL"
+
+# Nếu folder tồn tại thì xóa toàn bộ
+if (Test-Path $passFolder) {
+    Remove-Item $passFolder -Recurse -Force
+}
+if (Test-Path $failFolder) {
+    Remove-Item $failFolder -Recurse -Force
+}
+
+# Tạo lại folder
+New-Item -Path $passFolder -ItemType Directory -Force | Out-Null
+New-Item -Path $failFolder -ItemType Directory -Force | Out-Null
+
+$cac_tram_test = @("DL", "PT", "PT1", "PT2", "BURN", "FT1", "FT2", "FT3", "FT4", "FT5", "FT6")
+
+$cac_tram_test | ForEach-Object {
+    New-Item -Path (Join-Path $passFolder $_) -ItemType Directory -Force | Out-Null
+    New-Item -Path (Join-Path $failFolder $_) -ItemType Directory -Force | Out-Null
+}
+
+
+
+#================= Tim folder log ===================
+
+
+
+
+
+#================= Loc Log ==========================
+$log_files = Get-ChildItem -Path $final_LOG_FOLDER -File
+if ($log_files) {
+    Write-Host "Da tim thay log files!" -ForegroundColor Green
+}
+else {
+    Write-Host "Khong tim thay log files!" -ForegroundColor Red
+    exit
+}
+$final_LOG_FOLDER
+
+#================= Ham di chuyen file ===================
+function join_and_move_fail {
+    param (
+        [string]$log_dir,
+        [string]$file_name,
+        [string]$state  
+    )
+    $path_to_file = Join-Path $log_dir $file_name
+    $path_to_des = [System.IO.Path]::Combine($failFolder, $state, $file_name)
+    try {
+        Move-Item -Path $path_to_file -Destination $path_to_des
+    }
+    catch {
+        <#Do this if a terminating exception happens#>
+        Write-Host "Error moving file $path_to_file to $state : " -ForegroundColor Red
+    }
+
+}
+function join_and_move_pass {
+    param (
+        [string]$log_dir,
+        [string]$file_name,
+        [string]$state  
+    )
+    $path_to_file = Join-Path $log_dir $file_name
+    $path_to_des = [System.IO.Path]::Combine($passFolder, $state, $file_name)
+    try {
+        Move-Item -Path $path_to_file -Destination $path_to_des
+    }
+    catch {
+        <#Do this if a terminating exception happens#>
+        Write-Host "Error moving file $path_to_file to $state : " -ForegroundColor Red
+    }
+
+}
+
+#================= Phan loai log fail ===================
+$count_fail = 0
+foreach ($_ in $log_files) {
+    
+    switch -regex ($_) {
+        "^FAIL.*DOWNLOAD" {
+            join_and_move_fail -log_dir $final_LOG_FOLDER -file_name $_ -state "DL"
+            $count_fail += 1
+            break
+        }
+        "^FAIL.*PT1" {
+            join_and_move_fail -log_dir $final_LOG_FOLDER -file_name $_ -state "PT1"
+            $count_fail += 1
+            break
+        }
+        "^FAIL.*PT2" {
+            join_and_move_fail -log_dir $final_LOG_FOLDER -file_name $_ -state "PT2"  
+            $count_fail += 1
+            break
+        }
+        "^FAIL.*PT_" {
+            join_and_move_fail -log_dir $final_LOG_FOLDER -file_name $_ -state "PT"
+            $count_fail += 1
+            break
+        }
+        "^FAIL.*BURN" {
+            join_and_move_fail -log_dir $final_LOG_FOLDER -file_name $_ -state "BURN"
+            $count_fail += 1
+            break
+        }
+        "^FAIL.*FT1" {
+            join_and_move_fail -log_dir $final_LOG_FOLDER -file_name $_ -state "FT1"
+            $count_fail += 1
+            break
+        }
+        "^FAIL.*FT2" {
+            join_and_move_fail -log_dir $final_LOG_FOLDER -file_name $_ -state "FT2"
+            $count_fail += 1
+            break
+        }
+        "^FAIL.*FT3" {
+            join_and_move_fail -log_dir $final_LOG_FOLDER -file_name $_ -state "FT3"
+            $count_fail += 1
+            break
+        }
+        "^FAIL.*FT4" {
+            join_and_move_fail -log_dir $final_LOG_FOLDER -file_name $_ -state "FT4"
+            $count_fail += 1
+            break
+        }
+        "^FAIL.*FT5" {
+
+            join_and_move_fail -log_dir $final_LOG_FOLDER -file_name $_ -state "FT5"
+            $count_fail += 1
+            break
+        }
+        "^FAIL.*FT6" {
+            join_and_move_fail -log_dir $final_LOG_FOLDER -file_name $_ -state "FT6"
+            $count_fail += 1
+            break
+        }
+    }
+}
+
+#================= Phan loai log pass ===================
+$count_pass = 0
+foreach ($_ in $log_files) {
+    
+    switch -regex ($_) {
+        "^PASS.*DOWNLOAD" {
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "DL"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*PT1" {
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "PT1"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*PT2" {
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "PT2"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*PT" {
+
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "PT"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*BURN" {
+
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "BURN"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*FT1" {
+
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT1"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*FT2" {
+
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT2"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*FT3" {
+
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT3"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*FT4" {
+
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT4"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*FT5" {
+
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT5"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*FT6" {
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT6"
+            $count_pass += 1
+            break
+        }
+    }
+}
+try {
+    Write-Host "Da loc log xong! Vui long cho mot trang phao tay ! "
+    Write-Host " "
+    Write-Host " "
+    Write-Host " "
+    Start-Sleep -Seconds 1
+    pr -p "pass: $count_pass"
+    pr -p "fail: $count_fail"
+    pr -p "Tong so file fail va pass : $($count_fail + $count_pass)"
+    pr -p "so file thuc te : $($log_files.Count)"
+}
+catch {
+    Write-Host "Error when printing summary: $_" -ForegroundColor Red
+}
+
+foreach ($tram in $cac_tram_test) {
+    $count_files_in_pass = (Get-ChildItem -Path (Join-Path $passFolder $tram)).Count
+    if ($count_files_in_pass -eq 0) {
+        Remove-Item -Path (Join-Path $passFolder $tram) -Recurse -Force
+    }
+}
+
+[System.Console]::Out.Flush()
+Start-Sleep -Milliseconds 300
