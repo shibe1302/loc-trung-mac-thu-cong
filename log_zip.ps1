@@ -37,9 +37,15 @@ $LOG_DIR = Join-Path $folder_containing_zip $LOG_FOLDER
 pr -p " log dir $LOG_DIR"
 
 
+
+
+
+
 #================= Tao cac folder cua cac tram test ===================
 $passFolder = Join-Path $LOG_DIR "PASS"
 $failFolder = Join-Path $LOG_DIR "FAIL"
+$sai_ftu_Folder = Join-Path $LOG_DIR "SAI_FTU"
+New-Item -Path $sai_ftu_Folder -ItemType Directory -Force | Out-Null
 New-Item -Path $passFolder -ItemType Directory -Force | Out-Null
 New-Item -Path $failFolder -ItemType Directory -Force | Out-Null
 $cac_tram_test = @("DL", "PT", "PT1", "PT2", "BURN", "FT1", "FT2", "FT3", "FT4", "FT5", "FT6")
@@ -73,19 +79,19 @@ while ($exit_loop -eq $true) {
         }
 
     }
-    if($exit_loop -eq $true) {
-            Write-Host "Khong tim thay log folder!
+    if ($exit_loop -eq $true) {
+        Write-Host "Khong tim thay log folder!
 Hoac doi lai ten folder chua file Log thanh LOG hoac log" -ForegroundColor Red
-    write-Host "DOI TEN folder sau do bam [y] de tiep tuc, nhap ky tu bat ki de thoat " -ForegroundColor Yellow
-    $key_presses = Read-Host
-    if ($key_presses -imatch "y") {
-        $rename_check = $true
-    }
-    else {
-        write-Host "Thoat chuong trinh" -ForegroundColor Yellow
-        start-sleep -Seconds 1
-        exit
-    }
+        write-Host "DOI TEN folder sau do bam [y] de tiep tuc, nhap ky tu bat ki de thoat " -ForegroundColor Yellow
+        $key_presses = Read-Host
+        if ($key_presses -imatch "y") {
+            $rename_check = $true
+        }
+        else {
+            write-Host "Thoat chuong trinh" -ForegroundColor Yellow
+            start-sleep -Seconds 1
+            exit
+        }
     }
 
 }
@@ -93,7 +99,7 @@ Hoac doi lai ten folder chua file Log thanh LOG hoac log" -ForegroundColor Red
 
 
 
-#================= Loc Log ==========================
+#================= Tim folder Log ==========================
 $log_files = Get-ChildItem -Path $final_LOG_FOLDER -File
 if ($log_files) {
     Write-Host "Da tim thay log files!" -ForegroundColor Green
@@ -103,6 +109,44 @@ else {
     exit
 }
 $final_LOG_FOLDER
+#================= Kiem tra FTU ========================
+function is_FTU_correct {
+    param (
+        [string]$path,
+        [string]$ftu
+    )
+    $content = Get-Content -Path $filePath -Raw
+    $pattern = "FTU version *: *(FTU_.*)"
+    if ($content -match $pattern) {
+        $ftu_in_file = $matches[1].Trim() 
+        Write-Host "Correct FTU !" -ForegroundColor Green
+        return $ftu_in_file -eq $ftu
+    }
+    else {
+        Write-Output "No match found"
+        return $false
+    }
+    return $false
+    
+}
+# $path_test_fun="C:\Users\shibe\Desktop\test_cp\UXGFIBERT01_86pcs_2643011691_log\PASS\FT1\PASS_1C0B8B1EA930_UXGFIBERT01_FT1_UXGFIBEFT102_20250719011027_2643011691.log"
+# is_FTU_correct -path $path_test_fun -ftu "FTU_a6aa_1.0.26_4.1.7_UXG-Fiber"
+
+$log_file_list = Get-ChildItem -Path $final_LOG_FOLDER -File 
+foreach ($log_file in $log_file_list) {
+    $full_path_log_file = Join-Path $final_LOG_FOLDER $log_file.Name
+    if (-not (is_FTU_correct -path $full_path_log_file -ftu $FTU)) {
+        $path_to_des_sai_ftu = [System.IO.Path]::Combine($sai_ftu_Folder, $log_file.Name)
+        try {
+            Move-Item -Path $full_path_log_file -Destination $path_to_des_sai_ftu
+            Write-Host "Da chuyen file $($log_file.Name) vao folder SAI_FTU" -ForegroundColor Yellow
+        }
+        catch {
+            <#Do this if a terminating exception happens#>
+            Write-Host "Error moving file $full_path_log_file to SAI_FTU : " -ForegroundColor Red
+        }
+    }
+}
 
 #================= Ham di chuyen file ===================
 function join_and_move_fail {

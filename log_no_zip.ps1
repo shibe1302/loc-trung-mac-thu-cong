@@ -53,7 +53,7 @@ Hay dat ten folder chua file log thanh 'log' hoac 'LOG'!")
 #================= Tao cac folder cua cac tram test ===================
 $passFolder = Join-Path $LOG_DIR "PASS"
 $failFolder = Join-Path $LOG_DIR "FAIL"
-
+$invalid_FTU_Folder = Join-Path $LOG_DIR "SAI_FTU"
 # Nếu folder tồn tại thì xóa toàn bộ
 if (Test-Path $passFolder) {
     Remove-Item $passFolder -Recurse -Force
@@ -61,10 +61,14 @@ if (Test-Path $passFolder) {
 if (Test-Path $failFolder) {
     Remove-Item $failFolder -Recurse -Force
 }
+if (Test-Path $invalid_FTU_Folder) {
+    Remove-Item $invalid_FTU_Folder -Recurse -Force
+}
 
 # Tạo lại folder
 New-Item -Path $passFolder -ItemType Directory -Force | Out-Null
 New-Item -Path $failFolder -ItemType Directory -Force | Out-Null
+New-Item -Path $invalid_FTU_Folder -ItemType Directory -Force | Out-Null
 
 $cac_tram_test = @("DL", "PT", "PT1", "PT2", "BURN", "FT1", "FT2", "FT3", "FT4", "FT5", "FT6")
 
@@ -73,24 +77,6 @@ $cac_tram_test | ForEach-Object {
     New-Item -Path (Join-Path $failFolder $_) -ItemType Directory -Force | Out-Null
 }
 
-
-
-#================= Tim folder log ===================
-
-
-
-
-
-#================= Loc Log ==========================
-$log_files = Get-ChildItem -Path $final_LOG_FOLDER -File
-if ($log_files) {
-    Write-Host "Da tim thay log files!" -ForegroundColor Green
-}
-else {
-    Write-Host "Khong tim thay log files!" -ForegroundColor Red
-    exit
-}
-$final_LOG_FOLDER
 
 #================= Ham di chuyen file ===================
 function join_and_move_fail {
@@ -129,6 +115,7 @@ function join_and_move_pass {
 }
 
 #================= Phan loai log fail ===================
+$log_files= Get-ChildItem -Path $final_LOG_FOLDER -File 
 $count_fail = 0
 foreach ($_ in $log_files) {
     
