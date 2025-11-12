@@ -18,16 +18,16 @@ function is_FTU_correct {
     
 }
 
-function check_ftu_in_folder {
-    param (
-        [string]$path,
-        [string]$ftu
-    )
-    
-    
+$all_path_log = Get-ChildItem -Path "C:\Users\shibe\Desktop\test_cp\UXGFIBERT01_86pcs_2643011691_log_1\UXGFIBERT01_86pcs_2643011691_log\log" -Recurse -File -Include *.log, *.txt | Select-Object -ExpandProperty FullName
+$all_path_log | Out-File -FilePath "C:\Users\shibe\Desktop\ps_learn\log_file_list.txt"
+Write-Host "Found: $($all_path_log.Count)" -ForegroundColor Green
+#     FTU_a6aa_1.0.22_4.1.7_UXG-Fiber
+$FTU="FTU_a6aa_1.0.26_4.1.7_UXG-Fiber"
+foreach ($log_file in $all_path_log) {
+    if (-not (is_FTU_correct -path $log_file -ftu $FTU)) {
+        Write-Host "File $([System.IO.Path]::GetFileName($log_file)) sai FTU, di chuyen den folder SAI_FTU" -ForegroundColor Cyan
+    }
 }
 
 
-$path_test_fun="C:\Users\shibe\Desktop\test_cp\UXGFIBERT01_86pcs_2643011691_log_1\UXGFIBERT01_86pcs_2643011691_log\PASS\FT2\PASS_1C0B8B1EA6B8_UXGFIBERT01_FT2_UXGFIBEFT201_20250719095407_2643011691.log"
-is_FTU_correct -path $path_test_fun -ftu "FTU_a6aa_1.0.26_4.1.7_UXG-Fiber" #FTU_a6aa_1.0.26_4.1.7_UXG-Fiber
 
