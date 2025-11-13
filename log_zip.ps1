@@ -29,22 +29,34 @@ pr -p $zipFile
 pr -p $nameFolder
 & "C:\Program Files\7-Zip\7z.exe" x $zipFile -aoa -o"$folder_containing_zip" -y
 
+#================= Tim folder LOG ===================
+$final_LOG_FOLDER = "cac"
+$LOG_DIR=(Get-Item $zipFile).DirectoryName
+$found = Get-ChildItem -Path $LOG_DIR -Recurse -Directory -ErrorAction SilentlyContinue |
+Where-Object { $_.Name -imatch "^log$" }
 
-#================= lay ten folder vua giai nen ===================
-$list_folder = Get-ChildItem -Path $folder_containing_zip -Directory
-$LOG_FOLDER = $list_folder[0].Name
-$LOG_DIR = Join-Path $folder_containing_zip $LOG_FOLDER
-pr -p " log dir $LOG_DIR"
+if ($found) {
+    $final_LOG_FOLDER = $found[0].FullName
+    Write-Host "Da tim thay folder log !" -ForegroundColor Green
+}
+else {
+    Write-Host "Khong tim thay folder log !" -ForegroundColor Yellow
+    Write-Host "Hay dat ten folder chua file LOG thanh LOG hoac log !" -ForegroundColor Yellow
+    exit
+}
 
+$parent_of_log = (Get-Item $final_LOG_FOLDER).Parent.FullName
+Write-Output $parent_of_log
+$Tong_file_log=(Get-Item $final_LOG_FOLDER).GetFiles().Count
 
 
 
 
 
 #================= Tao cac folder cua cac tram test ===================
-$passFolder = Join-Path $LOG_DIR "PASS"
-$failFolder = Join-Path $LOG_DIR "FAIL"
-$sai_ftu_Folder = Join-Path $LOG_DIR "SAI_FTU"
+$passFolder = Join-Path $parent_of_log "PASS"
+$failFolder = Join-Path $parent_of_log "FAIL"
+$sai_ftu_Folder = Join-Path $parent_of_log "SAI_FTU"
 New-Item -Path $sai_ftu_Folder -ItemType Directory -Force | Out-Null
 New-Item -Path $passFolder -ItemType Directory -Force | Out-Null
 New-Item -Path $failFolder -ItemType Directory -Force | Out-Null
@@ -55,96 +67,37 @@ $cac_tram_test | ForEach-Object {
 }
 
 
-#================= Tim folder log ===================
-
-
-$final_LOG_FOLDER = "123"
-$exit_loop = $true
-$rename_check = $true
-while ($exit_loop -eq $true) {
-    $list_dir_LOG_FOLDER = Get-ChildItem -Path $LOG_DIR -Directory
-    pr -p $list_dir_LOG_FOLDER
-    foreach ($folder in $list_dir_LOG_FOLDER) {
-        if ($folder.Name -imatch "log") {
-            try {
-                $final_LOG_FOLDER = Join-Path $LOG_DIR $folder.Name
-                $exit_loop = $false
-                break
-            }
-            catch {
-                Write-Host "Error when setting final_LOG_FOLDER: $_" -ForegroundColor Red
-                exit
-            }
-        
-        }
-
-    }
-    if ($exit_loop -eq $true) {
-        Write-Host "Khong tim thay log folder!
-Hoac doi lai ten folder chua file Log thanh LOG hoac log" -ForegroundColor Red
-        write-Host "DOI TEN folder sau do bam [y] de tiep tuc, nhap ky tu bat ki de thoat " -ForegroundColor Yellow
-        $key_presses = Read-Host
-        if ($key_presses -imatch "y") {
-            $rename_check = $true
-        }
-        else {
-            write-Host "Thoat chuong trinh" -ForegroundColor Yellow
-            start-sleep -Seconds 1
-            exit
-        }
-    }
-
-}
-
-
-
-
-#================= Tim folder Log ==========================
-$log_files = Get-ChildItem -Path $final_LOG_FOLDER -File
-if ($log_files) {
-    Write-Host "Da tim thay log files!" -ForegroundColor Green
-}
-else {
-    Write-Host "Khong tim thay log files!" -ForegroundColor Red
-    exit
-}
-$final_LOG_FOLDER
 #================= Kiem tra FTU ========================
 function is_FTU_correct {
     param (
         [string]$path,
         [string]$ftu
     )
-    $content = Get-Content -Path $filePath -Raw
+    $content = Get-Content -Path $path -Raw
     $pattern = "FTU version *: *(FTU_.*)"
     if ($content -match $pattern) {
         $ftu_in_file = $matches[1].Trim() 
-        Write-Host "Correct FTU !" -ForegroundColor Green
         return $ftu_in_file -eq $ftu
     }
     else {
-        Write-Output "No match found"
+        Write-Output "No match found" ForegroundColor Orange
         return $false
     }
     return $false
     
 }
-# $path_test_fun="C:\Users\shibe\Desktop\test_cp\UXGFIBERT01_86pcs_2643011691_log\PASS\FT1\PASS_1C0B8B1EA930_UXGFIBERT01_FT1_UXGFIBEFT102_20250719011027_2643011691.log"
-# is_FTU_correct -path $path_test_fun -ftu "FTU_a6aa_1.0.26_4.1.7_UXG-Fiber"
 
-$log_file_list = Get-ChildItem -Path $final_LOG_FOLDER -File 
-foreach ($log_file in $log_file_list) {
-    $full_path_log_file = Join-Path $final_LOG_FOLDER $log_file.Name
-    if (-not (is_FTU_correct -path $full_path_log_file -ftu $FTU)) {
-        $path_to_des_sai_ftu = [System.IO.Path]::Combine($sai_ftu_Folder, $log_file.Name)
-        try {
-            Move-Item -Path $full_path_log_file -Destination $path_to_des_sai_ftu
-            Write-Host "Da chuyen file $($log_file.Name) vao folder SAI_FTU" -ForegroundColor Yellow
-        }
-        catch {
-            <#Do this if a terminating exception happens#>
-            Write-Host "Error moving file $full_path_log_file to SAI_FTU : " -ForegroundColor Red
-        }
+$all_path_log = Get-ChildItem -Path $final_LOG_FOLDER -Recurse -File -Include *.log, *.txt | Select-Object -ExpandProperty FullName
+$all_path_log | Out-File -FilePath (Join-Path $parent_of_log "file_sai_FTU.txt")
+Write-Host "Found: $($all_path_log.Count)" -ForegroundColor Green
+#     FTU_a6aa_1.0.22_4.1.7_UXG-Fiber
+$FTU="FTU_a6aa_1.0.26_4.1.7_UXG-Fiber"
+$count_invalid_FTU = 0
+foreach ($log_file1 in $all_path_log) {
+    if (-not (is_FTU_correct -path $log_file1 -ftu $FTU)) {
+        Write-Host "$([System.IO.Path]::GetFullPath($log_file1))" -ForegroundColor Magenta
+        $count_invalid_FTU += 1
+        Move-Item -Path $log_file1 -Destination $sai_ftu_Folder
     }
 }
 
@@ -186,6 +139,7 @@ function join_and_move_pass {
 
 #================= Phan loai log fail ===================
 $count_fail = 0
+$log_files= Get-ChildItem -Path $final_LOG_FOLDER -File
 foreach ($_ in $log_files) {
     
     switch -regex ($_) {
@@ -320,8 +274,9 @@ foreach ($_ in $log_files) {
 try {
     pr -p "pass: $count_pass"
     pr -p "fail: $count_fail"
-    pr -p "Tong so file fail va pass : $($count_fail + $count_pass)"
-    pr -p "so file thuc te : $($log_files.Count)"
+    pr -p "sai FTU: $count_invalid_FTU"
+    pr -p "So file log truoc khi xu li : $Tong_file_log"
+    pr -p "Tong so file fail, pass, sai FTU : $($count_fail + $count_pass + $count_invalid_FTU)"
 }
 catch {
     Write-Host "Error when printing summary: $_" -ForegroundColor Red

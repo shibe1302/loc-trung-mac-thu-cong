@@ -5,7 +5,7 @@ param (
     [string]$FTU
 )
 
-# thay link fike zip hoac folder sau khi giai nen tai day
+
 
 $FCD = ""
 $FTU = ""
@@ -20,40 +20,30 @@ function pr {
     Write-Host "=========== $p ============" -ForegroundColor Cyan
 }
 
-pr -p $LOG_DIR
 
-$list_dir_LOG_FOLDER = Get-ChildItem -Path $LOG_DIR -Directory
-$list_dir_LOG_FOLDER
-$final_LOG_FOLDER = "cac"
-foreach ($folder in $list_dir_LOG_FOLDER) {
-    if ($folder.Name -imatch "log") {
-        try {
-            $final_LOG_FOLDER = Join-Path $LOG_DIR $folder.Name
-            break
-        }
-        catch {
-            Write-Host "Error when setting final_LOG_FOLDER: $_" -ForegroundColor Red
-            exit
-        }
-        
-    }
 
-}
-Add-Type -AssemblyName System.Windows.Forms
-if ($final_LOG_FOLDER -eq "cac") {
-    Write-Host "Khong tim thay log folder!" -ForegroundColor Red
-    [System.Windows.Forms.MessageBox]::Show("Khong tim thay log folder!
-Hay dat ten folder chua file log thanh 'log' hoac 'LOG'!")
+$final_LOG_FOLDER="cac"
+
+$found = Get-ChildItem -Path $LOG_DIR -Recurse -Directory -ErrorAction SilentlyContinue |
+         Where-Object { $_.Name -imatch "^log$" }
+
+if ($found) {
+    $final_LOG_FOLDER=$found[0].FullName
+    Write-Host "Da tim thay folder log !" -ForegroundColor Green
+} else {
+    Write-Host "Khong tim thay folder log !" -ForegroundColor Yellow
+    Write-Host "Hay dat ten folder chua file LOG thanh LOG hoac log !" -ForegroundColor Yellow
     exit
-    
 }
 
+$parent_of_log = (Get-Item $final_LOG_FOLDER).Parent.FullName
+$Tong_file_log=(Get-Item $final_LOG_FOLDER).GetFiles().Count
 
 
 #================= Tao cac folder cua cac tram test ===================
-$passFolder = Join-Path $LOG_DIR "PASS"
-$failFolder = Join-Path $LOG_DIR "FAIL"
-$invalid_FTU_Folder = Join-Path $LOG_DIR "SAI_FTU"
+$passFolder = Join-Path $parent_of_log "PASS"
+$failFolder = Join-Path $parent_of_log "FAIL"
+$sai_ftu_Folder = Join-Path $parent_of_log "SAI_FTU"
 # Nếu folder tồn tại thì xóa toàn bộ
 if (Test-Path $passFolder) {
     Remove-Item $passFolder -Recurse -Force
@@ -61,14 +51,14 @@ if (Test-Path $passFolder) {
 if (Test-Path $failFolder) {
     Remove-Item $failFolder -Recurse -Force
 }
-if (Test-Path $invalid_FTU_Folder) {
-    Remove-Item $invalid_FTU_Folder -Recurse -Force
+if (Test-Path $sai_ftu_Folder) {
+    Remove-Item $sai_ftu_Folder -Recurse -Force
 }
 
 # Tạo lại folder
 New-Item -Path $passFolder -ItemType Directory -Force | Out-Null
 New-Item -Path $failFolder -ItemType Directory -Force | Out-Null
-New-Item -Path $invalid_FTU_Folder -ItemType Directory -Force | Out-Null
+New-Item -Path $sai_ftu_Folder -ItemType Directory -Force | Out-Null
 
 $cac_tram_test = @("DL", "PT", "PT1", "PT2", "BURN", "FT1", "FT2", "FT3", "FT4", "FT5", "FT6")
 
@@ -77,7 +67,39 @@ $cac_tram_test | ForEach-Object {
     New-Item -Path (Join-Path $failFolder $_) -ItemType Directory -Force | Out-Null
 }
 
+#================= Kiem tra FTU ========================
+function is_FTU_correct {
+    param (
+        [string]$path,
+        [string]$ftu
+    )
+    $content = Get-Content -Path $path -Raw
+    $pattern = "FTU version *: *(FTU_.*)"
+    if ($content -match $pattern) {
+        $ftu_in_file = $matches[1].Trim() 
+        return $ftu_in_file -eq $ftu
+    }
+    else {
+        Write-Output "No match found" ForegroundColor Orange
+        return $false
+    }
+    return $false
+    
+}
 
+$all_path_log = Get-ChildItem -Path $final_LOG_FOLDER -Recurse -File -Include *.log, *.txt | Select-Object -ExpandProperty FullName
+$all_path_log | Out-File -FilePath (Join-Path $parent_of_log "file_sai_FTU.txt")
+Write-Host "Found: $($all_path_log.Count)" -ForegroundColor Green
+#     FTU_a6aa_1.0.22_4.1.7_UXG-Fiber
+$FTU="FTU_a6aa_1.0.26_4.1.7_UXG-Fiber"
+$count_invalid_FTU = 0
+foreach ($log_file1 in $all_path_log) {
+    if (-not (is_FTU_correct -path $log_file1 -ftu $FTU)) {
+        Write-Host "$([System.IO.Path]::GetFullPath($log_file1))" -ForegroundColor Magenta
+        $count_invalid_FTU += 1
+        Move-Item -Path $log_file1 -Destination $sai_ftu_Folder
+    }
+}
 #================= Ham di chuyen file ===================
 function join_and_move_fail {
     param (
@@ -249,15 +271,11 @@ foreach ($_ in $log_files) {
     }
 }
 try {
-    Write-Host "Da loc log xong! Vui long cho mot trang phao tay ! "
-    Write-Host " "
-    Write-Host " "
-    Write-Host " "
-    Start-Sleep -Seconds 1
     pr -p "pass: $count_pass"
     pr -p "fail: $count_fail"
-    pr -p "Tong so file fail va pass : $($count_fail + $count_pass)"
-    pr -p "so file thuc te : $($log_files.Count)"
+    pr -p "sai FTU: $count_invalid_FTU"
+    pr -p "So file log truoc khi xu li : $Tong_file_log"
+    pr -p "Tong so file fail, pass, sai FTU : $($count_fail + $count_pass + $count_invalid_FTU)"
 }
 catch {
     Write-Host "Error when printing summary: $_" -ForegroundColor Red
