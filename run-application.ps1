@@ -4,8 +4,8 @@
 
 # Nếu bị lỗi unauthorized access thì chạy lệnh này 'Set-ExecutionPolicy RemoteSigned -Scope CurrentUser'
 
-#$variable = "C:\Users\shibe\Desktop\test_cp\UXGFIBERT01_86pcs_2643011691_log_1.7z"
-$variable = "C:\Users\shibe\Desktop\test_cp\UXGFIBERT01_86pcs_2643011691_log_1"
+$variable = "C:\Users\shibe\Desktop\test_cp\UXGFIBERT01_86pcs_2643011691_log_1.7z"
+#$variable = "C:\Users\shibe\Desktop\test_cp\UXGFIBERT01_86pcs_2643011691_log_1"
 $FTU="FTU_a6aa_1.0.26_4.1.7_UXG-Fiber" 
 if (Test-Path $variable -PathType Container) {
     & .\log_no_zip.ps1 -LOG_DIR $variable -FCD "" -FTU $FTU

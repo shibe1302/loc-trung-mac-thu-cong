@@ -271,6 +271,10 @@ foreach ($_ in $log_files) {
         }
     }
 }
+#================= Loc trung MAC ===================
+& .\loc_trung_mac.ps1 -folder_path $folder_containing_zip
+
+
 try {
     pr -p "pass: $count_pass"
     pr -p "fail: $count_fail"
