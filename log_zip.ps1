@@ -137,6 +137,76 @@ function join_and_move_pass {
 
 }
 
+#================= Phan loai log pass ===================
+$count_pass = 0
+foreach ($_ in $log_files) {
+    
+    switch -regex ($_) {
+        "^PASS.*_DOWNLOAD_" {
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "DL"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*_PT1_" {
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "PT1"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*_PT2_" {
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "PT2"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*_PT_" {
+
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "PT"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*_BURN_" {
+
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "BURN"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*_FT1_" {
+
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT1"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*_FT2_" {
+
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT2"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*_FT3_" {
+
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT3"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*_FT4_" {
+
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT4"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*_FT5_" {
+
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT5"
+            $count_pass += 1
+            break
+        }
+        "^PASS.*_FT6_" {
+            join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT6"
+            $count_pass += 1
+            break
+        }
+    }
+}
+
 #================= Phan loai log fail ===================
 $count_fail = 0
 $log_files= Get-ChildItem -Path $final_LOG_FOLDER -File
@@ -207,64 +277,64 @@ $count_pass = 0
 foreach ($_ in $log_files) {
     
     switch -regex ($_) {
-        "^PASS.*DOWNLOAD" {
+        "^PASS.*_DOWNLOAD_" {
             join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "DL"
             $count_pass += 1
             break
         }
-        "^PASS.*PT1" {
+        "^PASS.*_PT1_" {
             join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "PT1"
             $count_pass += 1
             break
         }
-        "^PASS.*PT2" {
+        "^PASS.*_PT2_" {
             join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "PT2"
             $count_pass += 1
             break
         }
-        "^PASS.*PT" {
+        "^PASS.*_PT_" {
 
             join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "PT"
             $count_pass += 1
             break
         }
-        "^PASS.*BURN" {
+        "^PASS.*_BURN_" {
 
             join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "BURN"
             $count_pass += 1
             break
         }
-        "^PASS.*FT1" {
+        "^PASS.*_FT1_" {
 
             join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT1"
             $count_pass += 1
             break
         }
-        "^PASS.*FT2" {
+        "^PASS.*_FT2_" {
 
             join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT2"
             $count_pass += 1
             break
         }
-        "^PASS.*FT3" {
+        "^PASS.*_FT3_" {
 
             join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT3"
             $count_pass += 1
             break
         }
-        "^PASS.*FT4" {
+        "^PASS.*_FT4_" {
 
             join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT4"
             $count_pass += 1
             break
         }
-        "^PASS.*FT5" {
+        "^PASS.*_FT5_" {
 
             join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT5"
             $count_pass += 1
             break
         }
-        "^PASS.*FT6" {
+        "^PASS.*_FT6_" {
             join_and_move_pass -log_dir $final_LOG_FOLDER -file_name $_ -state "FT6"
             $count_pass += 1
             break
