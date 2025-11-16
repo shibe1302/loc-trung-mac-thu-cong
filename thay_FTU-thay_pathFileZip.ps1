@@ -7,15 +7,15 @@
 
 
 
-$variable = "C:\Users\shibe\Desktop\test_cp\USWPM48PT01-giet-tool.7z"
-#$variable = "C:\Users\Administrator\Desktop\loc-log-main\log_file\UXGFIBERT01_86pcs_2643011691_log_1"
+# link đến file zip hoặc link folder sau khi giải nén filezip(vào bên trong folder rồi copy link)
+$FilePath= "C:\Users\shibe\Desktop\test_cp\USWPM48PT01-giet-tool.7z"
 $FTU="FTU_USW_PROMAX-SERIES_1.0.3_7.0.50"
 $FCD="FCD_USW_PROMAX-SERIES_1.0.2_7.0.50"
-if (Test-Path $variable -PathType Container) {
-    & .\log_no_zip.ps1 -LOG_DIR $variable -FCD $FCD -FTU $FTU
+if (Test-Path $FilePath -PathType Container) {
+    & .\log_no_zip.ps1 -LOG_DIR $FilePath -FCD $FCD -FTU $FTU
 }
-elseif (Test-Path $variable -PathType Leaf) {
-    & .\log_zip.ps1 -zipFile $variable -FCD $FCD -FTU $FTU
+elseif (Test-Path $FilePath -PathType Leaf) {
+    & .\log_zip.ps1 -zipFile $FilePath -FCD $FCD -FTU $FTU
 }else {
     Write-Host "Path khong ton tai. Vui long kiem tra lai!" -ForegroundColor Red
     exit
