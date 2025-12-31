@@ -36,7 +36,7 @@ function Remove-DuplicateMac {
     }
 
     $logFiles = Get-ChildItem -Path $folderPath -File -ErrorAction SilentlyContinue |
-                Where-Object { $_.Extension -in @(".log", ".txt") }
+                Where-Object { $_.Extension -in @(".log", ".txt",".bin",".png",".wav","jpg") }
 
     if (-not $logFiles -or $logFiles.Count -eq 0) {
         return 0
